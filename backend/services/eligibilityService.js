@@ -27,7 +27,8 @@ function evaluateEligibility({ job, requiredSkills = [], scores = [], aptitudePe
   // Skills: every required skill must reach the required percentage
   const minSkill = Number(job.required_skill_percentage ?? 0);
   const failedSkills = [];
-  for (const skill of requiredSkills) {
+  // No minimum set (0 or empty) means no skill assessment is required
+  for (const skill of minSkill > 0 ? requiredSkills : []) {
     const score = byId.get(skill.id);
     if (score === undefined || score < minSkill) {
       failedSkills.push(skill.name);

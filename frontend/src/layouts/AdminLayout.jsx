@@ -11,6 +11,7 @@ function AdminLayout() {
   const navItems = [
     { name: 'Dashboard', path: '/admin' },
     { name: 'User Management', path: '/admin/users' },
+    { name: 'Bulk Add Students', path: '/admin/bulk-students' },
     { name: 'Skills & Assessments', path: '/admin/skills-assessments' },
     { name: 'Companies', path: '/admin/companies' },
   ]

@@ -85,13 +85,17 @@ function ResumeUpload() {
 
         <Card>
           <h2 className="mb-3 font-semibold text-slate-900">{resume ? 'Replace resume' : 'Upload resume'}</h2>
-          <input
-            type="file"
-            accept="application/pdf,.pdf,.txt"
-            onChange={(e) => setFile(e.target.files[0] || null)}
-            className="w-full text-sm"
-          />
-          {file && <p className="mt-2 text-xs text-slate-500">Selected: {file.name}</p>}
+          <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center transition hover:border-blue-400 hover:bg-blue-50">
+            <span className="text-3xl">📎</span>
+            <span className="mt-2 text-sm font-semibold text-blue-600">Click here to choose your resume (PDF)</span>
+            <input
+              type="file"
+              accept="application/pdf,.pdf,.txt"
+              onChange={(e) => setFile(e.target.files[0] || null)}
+              className="sr-only"
+            />
+          </label>
+          {file && <p className="mt-2 text-sm font-medium text-emerald-700">Selected: {file.name} — now click Upload</p>}
           <ErrorBox message={problem} />
           {message && <p className="mt-3 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</p>}
           <button

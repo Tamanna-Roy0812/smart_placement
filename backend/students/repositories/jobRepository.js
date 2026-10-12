@@ -20,16 +20,18 @@ const getActiveJobs = async () => {
       minimum_aptitude_percentage,
       minimum_cgpa,
       eligible_branches,
-      companies (
+      companies!inner (
         id,
         name,
         description,
         industry,
         website,
         location,
-        logo_url
+        logo_url,
+        is_verified
       )
     `)
+    .eq("companies.is_verified", true)
     .or(`deadline.is.null,deadline.gte.${today}`)
     .order("deadline");
 
@@ -65,7 +67,8 @@ const getJobById = async (jobId) => {
         industry,
         website,
         location,
-        logo_url
+        logo_url,
+        is_verified
       )
     `)
     .eq("id", jobId)
@@ -73,6 +76,11 @@ const getJobById = async (jobId) => {
 
   if (error) {
     throw error;
+  }
+
+  // Jobs of a company the admin has not approved yet are not visible to students
+  if (data?.companies && data.companies.is_verified === false) {
+    return null;
   }
 
   return data;

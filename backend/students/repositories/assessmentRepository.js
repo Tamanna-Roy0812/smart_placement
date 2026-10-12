@@ -80,7 +80,71 @@ const getAssessmentQuestions = async (assessmentId) => {
     throw error;
   }
 
-  return data;
+  if (data.length > 0) {
+    return data;
+  }
+
+  // The admin pages do not link questions to an assessment by hand, so on the
+  // first request we pick them from the Question Bank by the assessment's
+  // skill (number_of_questions of them, shuffled if random selection is on)
+  // and save the links so every student gets the same set from then on.
+  const { data: assessment } = await supabase
+    .from("assessments")
+    .select("skill_id, number_of_questions, random_question_selection")
+    .eq("id", assessmentId)
+    .maybeSingle();
+
+  if (!assessment?.skill_id) {
+    return [];
+  }
+
+  const { data: bank, error: bankError } = await supabase
+    .from("questions")
+    .select(
+      "id, question, question_type, options, difficulty, marks, negative_marks, skill_id"
+    )
+    .eq("skill_id", assessment.skill_id)
+    .eq("is_active", true)
+    .order("created_at");
+
+  if (bankError) {
+    throw bankError;
+  }
+
+  let pool = [...(bank || [])];
+
+  if (assessment.random_question_selection) {
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+  }
+
+  const wanted = Number(assessment.number_of_questions);
+  if (wanted > 0) {
+    pool = pool.slice(0, wanted);
+  }
+
+  if (pool.length > 0) {
+    const { error: linkError } = await supabase
+      .from("assessment_questions")
+      .insert(
+        pool.map((q, index) => ({
+          assessment_id: assessmentId,
+          question_id: q.id,
+          question_order: index + 1,
+        }))
+      );
+
+    if (linkError) {
+      console.error("Could not save assessment question links:", linkError.message);
+    }
+  }
+
+  return pool.map((q, index) => ({
+    question_order: index + 1,
+    questions: q,
+  }));
 };
 
 // Create a new assessment attempt
@@ -251,13 +315,34 @@ const getQuestionForScoring = async (assessmentId, questionId) => {
     `)
     .eq("assessment_id", assessmentId)
     .eq("question_id", questionId)
-    .single();
+    .maybeSingle();
 
   if (error) {
     throw error;
   }
 
-  return data?.questions;
+  if (data?.questions) {
+    return data.questions;
+  }
+
+  // Not linked (links could not be saved): accept a question of the same skill
+  const { data: assessment } = await supabase
+    .from("assessments")
+    .select("skill_id")
+    .eq("id", assessmentId)
+    .maybeSingle();
+
+  const { data: question } = await supabase
+    .from("questions")
+    .select("id, correct_answer, marks, negative_marks, skill_id")
+    .eq("id", questionId)
+    .maybeSingle();
+
+  if (question && assessment && question.skill_id === assessment.skill_id) {
+    return question;
+  }
+
+  return null;
 };
 
 const calculateAssessmentScore = async (attemptId) => {

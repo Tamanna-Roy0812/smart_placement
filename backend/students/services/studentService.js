@@ -265,13 +265,15 @@ const checkJobEligibility = async (studentId, jobId) => {
     }
   }
 
-  // Check required skills
+  // Check required skills (only when the job sets a minimum skill score)
+  const requiredPercentage =
+    Number(job.required_skill_percentage || 0);
+
   if (
+    requiredPercentage > 0 &&
     job.required_skills &&
     job.required_skills.length > 0
   ) {
-    const requiredPercentage =
-      Number(job.required_skill_percentage || 0);
 
     for (const requiredSkill of job.required_skills) {
       const studentSkill = studentSkills.find(

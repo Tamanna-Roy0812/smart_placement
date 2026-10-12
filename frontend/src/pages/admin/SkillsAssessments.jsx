@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { FiEdit2, FiTrash2, FiX, FiSearch } from 'react-icons/fi'
 import { adminApi } from '../../lib/adminApi'
+import BulkQuestionsModal from '../../components/admin/BulkQuestionsModal'
 
 const inputClass = 'w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100'
 const labelClass = 'mb-2 block text-sm font-medium text-slate-700'
@@ -21,6 +22,7 @@ function SkillsAssessments() {
   const [modalType, setModalType] = useState('')
   const [editingItem, setEditingItem] = useState(null)
   const [form, setForm] = useState(blankSkill)
+  const [showBulk, setShowBulk] = useState(false)
 
   const loadAll = async () => {
     setLoading(true); setError('')
@@ -129,7 +131,7 @@ function SkillsAssessments() {
         {error && <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
         {notice && <div role="status" className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{notice}</div>}
         <div className="mb-6"><h2 className="text-xl font-bold text-slate-900">{current.title}</h2><p className="mt-1 text-sm text-slate-500">{current.description}</p></div>
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between"><div className="relative w-full md:max-w-md"><FiSearch className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" /><input value={search} onChange={(e) => setSearch(e.target.value)} type="search" placeholder={`Search ${current.title.toLowerCase()}...`} className={`${inputClass} pl-11`} /></div><button type="button" onClick={openAdd} disabled={activeTab !== 'skills' && skills.length === 0} className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50">{current.button}</button></div>
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between"><div className="relative w-full md:max-w-md"><FiSearch className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" /><input value={search} onChange={(e) => setSearch(e.target.value)} type="search" placeholder={`Search ${current.title.toLowerCase()}...`} className={`${inputClass} pl-11`} /></div><div className="flex flex-wrap gap-3">{activeTab === 'questions' && <button type="button" onClick={() => setShowBulk(true)} disabled={skills.length === 0} className="rounded-xl border border-blue-200 bg-white px-5 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50">⬆ Bulk upload questions</button>}<button type="button" onClick={openAdd} disabled={activeTab !== 'skills' && skills.length === 0} className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50">{current.button}</button></div></div>
 
         <div className="overflow-x-auto rounded-xl border border-slate-200">
           {activeTab === 'skills' && <table className="w-full min-w-[650px] text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-400"><tr><th className="px-5 py-4">Skill</th><th className="px-5 py-4">Description</th><th className="px-5 py-4">Status</th><th className="px-5 py-4">Actions</th></tr></thead><tbody>{loading ? <tr><td colSpan="4" className="px-5 py-12 text-center text-slate-500">Loading skills…</td></tr> : filteredItems.length === 0 ? <tr><td colSpan="4" className="px-5 py-12 text-center text-slate-500">No skills found.</td></tr> : filteredItems.map((skill) => <tr key={skill.id} className="border-t border-slate-100"><td className="px-5 py-4 font-semibold text-slate-800">{skill.name}</td><td className="px-5 py-4 text-slate-600">{skill.description || '—'}</td><td className="px-5 py-4"><button type="button" onClick={() => toggleSkill(skill)} className={`rounded-full px-3 py-1 text-xs font-semibold ${skill.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>{skill.is_active ? 'Enabled' : 'Disabled'}</button></td><td className="px-5 py-4"><div className="flex items-center gap-3"><button type="button" onClick={() => openEdit('skills', skill)} className="inline-flex items-center gap-1.5 font-medium text-blue-600"><FiEdit2 size={15} />Edit</button><button type="button" onClick={() => deleteItem('skills', skill)} className="inline-flex items-center gap-1.5 font-medium text-red-500"><FiTrash2 size={15} />Delete</button></div></td></tr>)}</tbody></table>}
@@ -138,6 +140,7 @@ function SkillsAssessments() {
         </div>
       </div>
 
+      {showBulk && <BulkQuestionsModal skills={skills} onClose={() => setShowBulk(false)} onDone={(r) => { loadAll(); setNotice(`${r.created} question(s) added.`) }} />}
       {modalType && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"><div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
         <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-5"><div><h2 className="text-xl font-bold text-slate-900">{modalTitle}</h2><p className="mt-1 text-sm text-slate-500">Changes are saved to the Supabase database.</p></div><button type="button" onClick={closeModal} className="rounded-full p-2 text-slate-400 hover:bg-slate-100" aria-label="Close"><FiX size={20} /></button></div>
         <div className="min-h-0 flex-1 overflow-y-auto"><div className="grid gap-5 p-6">

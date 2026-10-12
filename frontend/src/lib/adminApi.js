@@ -21,7 +21,7 @@ export async function adminApi(resource, { method = 'GET', id, body } = {}) {
 
   const result = await response.json().catch(() => ({}))
   if (!response.ok || result.success === false) {
-    throw new Error(result.message || `Request failed (${response.status}).`)
+    throw new Error(result.message || result.error || `Request failed (${response.status}).`)
   }
   return result.data ?? result
 }

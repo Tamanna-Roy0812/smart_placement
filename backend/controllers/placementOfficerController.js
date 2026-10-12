@@ -163,7 +163,7 @@ const createCompany = async (req, res) => {
 
   const { data, error } = await db(req)
     .from("companies")
-    .insert({ ...value, created_by: req.user.id })
+    .insert({ ...value, created_by: req.user.id, is_verified: false })
     .select()
     .single();
   if (error) return fail(res, error);

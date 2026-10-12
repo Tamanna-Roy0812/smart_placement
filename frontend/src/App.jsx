@@ -30,6 +30,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import SkillsAssessments from "./pages/admin/SkillsAssessments";
 import Companies from "./pages/admin/Companies";
+import BulkStudents from "./pages/admin/BulkStudents";
 
 // ==================== PLACEMENT OFFICER ====================
 import PlacementOfficerLayout from "./layouts/PlacementOfficerLayout";
@@ -150,6 +151,11 @@ function App() {
           <Route
             path="/admin/users"
             element={<UserManagement />}
+          />
+
+          <Route
+            path="/admin/bulk-students"
+            element={<BulkStudents />}
           />
 
           <Route

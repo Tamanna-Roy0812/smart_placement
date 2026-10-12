@@ -390,7 +390,14 @@ function CompaniesJobs() {
                   ) : (
                     shownCompanies.map((c) => (
                       <tr key={c.id} className="border-t border-slate-100 hover:bg-slate-50">
-                        <td className="px-5 py-4 font-semibold text-slate-800">{c.name}</td>
+                        <td className="px-5 py-4 font-semibold text-slate-800">
+                          {c.name}
+                          {c.is_verified === false && (
+                            <span className="ml-2 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+                              Pending admin approval
+                            </span>
+                          )}
+                        </td>
                         <td className="px-5 py-4 text-sm text-slate-600">{c.industry || '—'}</td>
                         <td className="px-5 py-4 text-sm text-slate-600">{c.location || '—'}</td>
                         <td className="px-5 py-4 text-sm text-slate-600">
