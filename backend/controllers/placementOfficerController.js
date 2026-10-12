@@ -43,6 +43,15 @@ function storageClient() {
   );
 }
 
+/* applications -> students has no foreign key in this database, so student
+ * names are looked up separately instead of with a PostgREST embed. */
+async function studentNameMap(client, ids) {
+  const unique = [...new Set(ids.filter(Boolean))];
+  if (!unique.length) return new Map();
+  const { data } = await client.from("students").select("id, name").in("id", unique);
+  return new Map((data || []).map((x) => [x.id, x.name]));
+}
+
 function fail(res, error, status = 400) {
   console.error("[officer]", error?.code || "", error?.message || error);
   let message = "Request could not be completed.";
@@ -86,7 +95,7 @@ const getDashboard = async (req, res) => {
       client
         .from("applications")
         .select(
-          "id, status, created_at, applied_at, student:students(name), job:jobs!inner(role, created_by, company:companies(name))"
+          "id, status, created_at, applied_at, student_id, job:jobs!inner(role, created_by, company:companies(name))"
         )
         .eq("job.created_by", uid)
         .order("created_at", { ascending: false })
@@ -95,6 +104,7 @@ const getDashboard = async (req, res) => {
 
     const err = [jobs, apps, recent].find((r) => r.error)?.error;
     if (err) return fail(res, err);
+    const names = await studentNameMap(client, (recent.data || []).map((a) => a.student_id));
 
     res.json({
       success: true,
@@ -105,7 +115,7 @@ const getDashboard = async (req, res) => {
           id: a.id,
           status: a.status,
           applied_at: a.applied_at || a.created_at,
-          student_name: a.student?.name || "Unknown",
+          student_name: names.get(a.student_id) || "Unknown",
           job_role: a.job?.role,
           company: a.job?.company?.name,
         })),
@@ -265,18 +275,25 @@ const getApplications = async (req, res) => {
   const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 100);
   const search = String(req.query.search || "").trim().replace(/[%,()]/g, "");
 
-  const studentJoin = search ? "students!inner(name)" : "students(name)";
-  let q = db(req)
+  const client = db(req);
+  let q = client
     .from("applications")
     .select(
-      `id, status, created_at, applied_at, match_percentage, student_id, student:${studentJoin}, job:jobs!inner(id, role, created_by, company:companies(name))`,
+      `id, status, created_at, applied_at, match_percentage, student_id, job:jobs!inner(id, role, created_by, company:companies(name))`,
       { count: "exact" }
     )
     .eq("job.created_by", req.user.id)
     .order("created_at", { ascending: false })
     .range((page - 1) * limit, page * limit - 1);
 
-  if (search) q = q.ilike("student.name", `%${search}%`);
+  if (search) {
+    const { data: found } = await client.from("students").select("id").ilike("name", `%${search}%`).limit(500);
+    const ids = (found || []).map((x) => x.id);
+    if (!ids.length) {
+      return res.json({ success: true, data: [], pagination: { page, limit, total: 0 } });
+    }
+    q = q.in("student_id", ids);
+  }
   if (req.query.status) q = q.eq("status", String(req.query.status));
   if (req.query.job_id) {
     if (!isUuid(req.query.job_id)) return badRequest(res, ["job_id must be a valid id."]);
@@ -285,13 +302,14 @@ const getApplications = async (req, res) => {
 
   const { data, error, count } = await q;
   if (error) return fail(res, error);
+  const names = await studentNameMap(client, data.map((a) => a.student_id));
 
   res.json({
     success: true,
     data: data.map((a) => ({
       id: a.id,
       student_id: a.student_id,
-      student_name: a.student?.name || "Unknown",
+      student_name: names.get(a.student_id) || "Unknown",
       job_id: a.job?.id,
       job_role: a.job?.role,
       company: a.job?.company?.name,
@@ -319,8 +337,7 @@ const getApplicationDetail = async (req, res) => {
     .from("applications")
     .select(
       `id, status, created_at, applied_at, match_percentage, extracted_skills, missing_skills, student_id,
-       job:jobs!inner(*, company:companies(name)),
-       student:students(*)`
+       job:jobs!inner(*, company:companies(name))`
     )
     .eq("id", req.params.id)
     .eq("job.created_by", req.user.id)
@@ -328,7 +345,8 @@ const getApplicationDetail = async (req, res) => {
   if (error) return fail(res, error);
   if (!app) return res.status(404).json({ success: false, message: "Application not found." });
 
-  const [profile, resume, scores, skills] = await Promise.all([
+  const [studentRow, profile, resume, scores, skills] = await Promise.all([
+    client.from("students").select("*").eq("id", app.student_id).maybeSingle(),
     client.from("profiles").select("email").eq("id", app.student_id).maybeSingle(),
     client
       .from("resumes")
@@ -340,8 +358,9 @@ const getApplicationDetail = async (req, res) => {
     client.from("student_skill_scores").select("skill_id, score").eq("student_id", app.student_id),
     client.from("skills").select("id, name"),
   ]);
-  const subErr = [profile, resume, scores, skills].find((r) => r.error)?.error;
+  const subErr = [studentRow, profile, resume, scores, skills].find((r) => r.error)?.error;
   if (subErr) return fail(res, subErr);
+  app.student = studentRow.data;
 
   // Resume: short-lived signed URLs (bucket stays private)
   let resumeOut = null;
