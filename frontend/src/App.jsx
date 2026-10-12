@@ -19,6 +19,10 @@ import Assessments from "./pages/student/Assessments";
 import AssessmentsAttempts from "./pages/student/AssessmentsAttempts";
 import Results from "./pages/student/Results";
 import SkillScores from "./pages/student/SkillScores";
+import TakeAssessment from "./pages/student/TakeAssessment";
+import ResumeUpload from "./pages/student/ResumeUpload";
+import Notifications from "./pages/student/Notifications";
+import JobEligibility from "./pages/student/JobEligibility";
 
 // ==================== ADMIN ====================
 import AdminLayout from "./layouts/AdminLayout";
@@ -90,6 +94,26 @@ function App() {
           <Route
             path="/student/assessments"
             element={<Assessments />}
+          />
+
+          <Route
+            path="/student/assessments/:id"
+            element={<TakeAssessment />}
+          />
+
+          <Route
+            path="/student/resume"
+            element={<ResumeUpload />}
+          />
+
+          <Route
+            path="/student/notifications"
+            element={<Notifications />}
+          />
+
+          <Route
+            path="/student/eligibility"
+            element={<JobEligibility />}
           />
 
           <Route

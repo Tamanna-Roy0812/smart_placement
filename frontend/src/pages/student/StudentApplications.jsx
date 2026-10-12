@@ -1,23 +1,46 @@
+import { studentApi } from '../../lib/studentApi'
+import StatusBadge from '../../components/StatusBadge'
+import { Card, Chip, Empty, ErrorBox, Loading, PageHeader } from '../../components/student/ui'
+import { formatDate, useAsync } from '../../components/student/helpers'
+
 function StudentApplications() {
+  const { data, loading, error, reload } = useAsync(() => studentApi('applications').then((r) => r.data || []))
+
   return (
     <div className="p-6 md:p-8">
-      <p className="mb-2 text-sm font-medium text-blue-600">Student Portal</p>
-      <h1 className="text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
-        Applications 📄
-      </h1>
-      <p className="mt-2 text-slate-500">Track the status of jobs you've applied to.</p>
-
-      <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center">
-          <div className="text-4xl">📄</div>
-          <p className="mt-3 font-medium text-slate-700">No applications yet</p>
-          <p className="mt-1 text-sm text-slate-500">
-            Your submitted applications will show up here.
-          </p>
+      <PageHeader title="Applications" subtitle="Track the status of jobs you've applied to." />
+      <ErrorBox message={error} onRetry={reload} />
+      {loading ? (
+        <Loading />
+      ) : !data || data.length === 0 ? (
+        <Card>
+          <Empty icon="📄" title="No applications yet" text="Your submitted applications will show up here." />
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {data.map((a) => (
+            <Card key={a.id}>
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">{a.jobs?.role || 'Job'}</h3>
+                  <p className="text-sm text-slate-500">
+                    {a.jobs?.companies?.name || '—'}
+                    {a.jobs?.location ? ` · ${a.jobs.location}` : ''} · Applied {formatDate(a.applied_at || a.created_at)}
+                  </p>
+                </div>
+                <StatusBadge status={a.status} />
+              </div>
+              {(a.jobs?.required_skills || []).length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {a.jobs.required_skills.map((s) => <Chip key={s} tone="blue">{s}</Chip>)}
+                </div>
+              )}
+            </Card>
+          ))}
         </div>
-      </div>
+      )}
     </div>
-  );
+  )
 }
 
-export default StudentApplications;
+export default StudentApplications

@@ -1,4 +1,4 @@
-const supabase = require("../../config/supabase");
+const supabase = require("../../config/serviceSupabase");
 
 const getStudentResume = async (studentId) => {
   const { data, error } = await supabase

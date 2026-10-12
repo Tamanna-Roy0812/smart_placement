@@ -1,6 +1,8 @@
 const express = require("express");
 const authenticate = require("../middleware/auth");
 const studentController = require("../students/controllers/studentController");
+const resumeFileController = require("../students/controllers/resumeFileController");
+const recommendationController = require("../students/controllers/recommendationController");
 
 const router = express.Router();
 
@@ -17,6 +19,14 @@ router.get("/skills/my", studentController.getStudentSkills);
 router.post("/skills", studentController.addStudentSkill);
 router.get("/skill-scores", studentController.getStudentSkillScores);
 
+// Resume file upload (raw bytes) and short-lived view link
+router.post(
+  "/resume/upload",
+  express.raw({ type: () => true, limit: "6mb" }),
+  resumeFileController.uploadResume
+);
+router.get("/resume/link", resumeFileController.getResumeLink);
+
 // Resume
 router.get("/resume", studentController.getStudentResume);
 router.post("/resume", studentController.saveStudentResume);
@@ -24,6 +34,7 @@ router.patch("/resume", studentController.updateStudentResume);
 router.delete("/resume", studentController.deleteStudentResume);
 
 // Assessments
+router.get("/attempts", studentController.getAllAttempts);
 router.get("/assessments", studentController.getActiveAssessments);
 router.get("/assessments/:id", studentController.getAssessmentById);
 router.get("/assessments/:id/questions", studentController.getAssessmentQuestions);
@@ -57,6 +68,7 @@ router.get(
 );
 
 //Jobs
+router.get("/recommendations", recommendationController.getRecommendations);
 router.get("/jobs", studentController.getActiveJobs);
 router.get("/jobs/:id", studentController.getJobById);
 router.get("/jobs/:id/eligibility", studentController.checkJobEligibility);

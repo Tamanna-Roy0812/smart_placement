@@ -87,7 +87,9 @@ function UserManagement() {
   }
 
   useEffect(() => {
-    loadUsers()
+    const t = setTimeout(loadUsers, 0)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   /* ================= FILTER USERS ================= */

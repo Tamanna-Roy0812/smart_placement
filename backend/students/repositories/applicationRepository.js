@@ -1,4 +1,4 @@
-const supabase = require("../../config/supabase");
+const supabase = require("../../config/serviceSupabase");
 
 // Check whether the student has already applied for the job
 const getApplicationByStudentAndJob = async (studentId, jobId) => {

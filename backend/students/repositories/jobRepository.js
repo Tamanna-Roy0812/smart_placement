@@ -1,4 +1,4 @@
-const supabase = require("../../config/supabase");
+const supabase = require("../../config/serviceSupabase");
 
 // Get all active jobs that have not passed their deadline
 const getActiveJobs = async () => {
@@ -30,7 +30,7 @@ const getActiveJobs = async () => {
         logo_url
       )
     `)
-    .gte("deadline", today)
+    .or(`deadline.is.null,deadline.gte.${today}`)
     .order("deadline");
 
   if (error) {

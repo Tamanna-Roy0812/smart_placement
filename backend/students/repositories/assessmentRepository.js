@@ -1,4 +1,4 @@
-const supabase = require("../../config/supabase");
+const supabase = require("../../config/serviceSupabase");
 
 // Get all active assessments
 const getActiveAssessments = async () => {
@@ -278,7 +278,25 @@ const calculateAssessmentScore = async (attemptId) => {
   return score;
 };
 
+// All attempts of a student across assessments (for the Attempts / Results pages)
+const getAllStudentAttempts = async (studentId) => {
+  const { data, error } = await supabase
+    .from("assessment_attempts")
+    .select(
+      "id, assessment_id, score, percentage, started_at, completed_at, created_at, assessments(id, title, passing_percentage, duration_minutes, skill_id)"
+    )
+    .eq("student_id", studentId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+};
+
 module.exports = {
+  getAllStudentAttempts,
   getActiveAssessments,
   getAssessmentById,
   getAssessmentQuestions,

@@ -401,9 +401,10 @@ const completeAssessmentAttempt = async (req, res) => {
       0
     );
 
+    // negative marking can push the raw score below zero; never show < 0%
     const percentage =
       totalMarks > 0
-        ? (score / totalMarks) * 100
+        ? Math.max(0, (score / totalMarks) * 100)
         : 0;
 
     const completedAttempt =
@@ -450,6 +451,19 @@ const completeAssessmentAttempt = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Unable to submit assessment.",
+    });
+  }
+};
+
+const getAllAttempts = async (req, res) => {
+  try {
+    const attempts = await studentService.getAllStudentAttempts(req.user.id);
+    return res.json({ success: true, data: attempts });
+  } catch (error) {
+    console.error("Get all attempts error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to fetch assessment attempts.",
     });
   }
 };
@@ -910,6 +924,7 @@ const markNotificationAsRead = async (req, res) => {
 };
 
 module.exports = {
+  getAllAttempts,
   getStudentProfile,
   updateStudentProfile,
   getAvailableSkills,

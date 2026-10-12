@@ -1,0 +1,41 @@
+# Render blueprint: backend API + resume AI service.
+# New > Blueprint > pick this repo. Fill the "sync: false" values when asked.
+services:
+  - type: web
+    name: smart-placement-api
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: FRONTEND_URL        # your Vercel address, e.g. https://smart-placement.vercel.app
+        sync: false
+      - key: AI_SERVICE_URL      # the AI service address, e.g. https://smart-placement-ai.onrender.com
+        sync: false
+      - key: AI_SERVICE_KEY
+        fromService:
+          type: web
+          name: smart-placement-ai
+          envVarKey: AI_SERVICE_KEY
+
+  - type: web
+    name: smart-placement-ai
+    runtime: python
+    rootDir: ai-service
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: AI_SERVICE_KEY
+        generateValue: true

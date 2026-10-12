@@ -17,7 +17,17 @@ const PORT = process.env.PORT || 5000;
 app.use(helmet());
 
 // Allow frontend to communicate with backend
-app.use(cors());
+// On Render the app sits behind a proxy (needed for correct client IPs / rate limiting)
+app.set("trust proxy", 1);
+
+// FRONTEND_URL (comma separated) locks CORS to your deployed site; empty = allow all (local dev)
+app.use(
+  cors(
+    process.env.FRONTEND_URL
+      ? { origin: process.env.FRONTEND_URL.split(",").map((u) => u.trim().replace(/\/$/, "")) }
+      : undefined
+  )
+);
 
 // Parse JSON request bodies
 app.use(express.json());
@@ -25,7 +35,7 @@ app.use(express.json());
 // Basic API rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 600, // pages make several calls each; this still blocks abuse
 });
 
 app.use("/api", limiter);

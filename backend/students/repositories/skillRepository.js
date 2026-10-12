@@ -1,4 +1,4 @@
-const supabase = require("../../config/supabase");
+const supabase = require("../../config/serviceSupabase");
 
 const getActiveSkills = async () => {
   const { data, error } = await supabase

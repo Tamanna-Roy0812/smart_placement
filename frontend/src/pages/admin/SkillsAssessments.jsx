@@ -42,7 +42,10 @@ function SkillsAssessments() {
     finally { setLoading(false) }
   }
 
-  useEffect(() => { loadAll() }, [])
+  useEffect(() => {
+    const t = setTimeout(loadAll, 0)
+    return () => clearTimeout(t)
+  }, [])
 
   const tabs = [
     { id: 'skills', label: 'Skills', icon: '🧠', title: 'Skills', description: 'Manage the skills used by the placement system.', button: '+ Add Skill' },

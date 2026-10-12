@@ -31,7 +31,10 @@ function Companies() {
     }
   }
 
-  useEffect(() => { loadCompanies() }, [])
+  useEffect(() => {
+    const t = setTimeout(loadCompanies, 0)
+    return () => clearTimeout(t)
+  }, [])
 
   const filteredCompanies = useMemo(() => {
     const term = search.trim().toLowerCase()

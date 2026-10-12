@@ -450,7 +450,7 @@ const updateApplicationStatus = async (req, res) => {
   const client = db(req);
   const { data: owned } = await client
     .from("applications")
-    .select("id, jobs!inner(created_by)")
+    .select("id, student_id, jobs!inner(created_by, role)")
     .eq("id", req.params.id)
     .eq("jobs.created_by", req.user.id)
     .maybeSingle();
@@ -464,6 +464,20 @@ const updateApplicationStatus = async (req, res) => {
     .maybeSingle();
   if (error) return fail(res, error);
   if (!data) return res.status(403).json({ success: false, message: "You cannot update this application." });
+
+  // Tell the student (best effort: a failed notification never blocks the update)
+  try {
+    const { error: notifyError } = await storageClient().from("notifications").insert({
+      student_id: owned.student_id,
+      title: "Application status updated",
+      message: `Your application for ${owned.jobs?.role || "a job"} is now: ${data.status}.`,
+      type: "APPLICATION",
+    });
+    if (notifyError) console.error("[placement-officer] notification failed:", notifyError.message);
+  } catch (e) {
+    console.error("[placement-officer] notification failed:", e.message);
+  }
+
   res.json({ success: true, data });
 };
 

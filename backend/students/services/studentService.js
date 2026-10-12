@@ -144,6 +144,10 @@ const saveAssessmentAnswer = async (
   );
 };
 
+const getAllStudentAttempts = async (studentId) => {
+  return await assessmentRepository.getAllStudentAttempts(studentId);
+};
+
 const getAssessmentAnswers = async (attemptId) => {
   return await assessmentRepository.getAssessmentAnswers(attemptId);
 };
@@ -431,6 +435,7 @@ const createNotification = async (
 };
 
 module.exports = {
+  getAllStudentAttempts,
   getStudentProfile,
   updateStudentProfile,
   getAvailableSkills,

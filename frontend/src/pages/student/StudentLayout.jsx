@@ -48,6 +48,18 @@ function StudentLayout() {
             Applications
           </NavLink>
 
+          <NavLink to="/student/eligibility" className={linkClass}>
+            Job Eligibility
+          </NavLink>
+
+          <NavLink to="/student/resume" className={linkClass}>
+            Resume
+          </NavLink>
+
+          <NavLink to="/student/notifications" className={linkClass}>
+            Notifications
+          </NavLink>
+
           {/* New features */}
           <NavLink to="/student/assessments" className={linkClass}>
             Assessments

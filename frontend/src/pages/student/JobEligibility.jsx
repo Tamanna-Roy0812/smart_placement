@@ -1,61 +1,51 @@
+import { studentApi } from '../../lib/studentApi'
+import { Card, Chip, Empty, ErrorBox, Loading, PageHeader } from '../../components/student/ui'
+import { useAsync } from '../../components/student/helpers'
+
+async function load() {
+  const jobs = (await studentApi('jobs')).data || []
+  return Promise.all(
+    jobs.map((j) =>
+      studentApi(`jobs/${j.id}/eligibility`)
+        .then((r) => ({ job: j, result: r.data }))
+        .catch(() => ({ job: j, result: null }))
+    )
+  )
+}
+
 function JobEligibility() {
-  const jobs = [];
+  const { data, loading, error, reload } = useAsync(load)
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold text-slate-900">
-        Job Eligibility
-      </h1>
-
-      <p className="mt-2 mb-8 text-slate-500">
-        Check your eligibility for available placement opportunities.
-      </p>
-
-      {jobs.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-          <div className="mb-4 text-5xl">✅</div>
-
-          <h2 className="text-xl font-semibold text-slate-900">
-            No Eligibility Results Yet
-          </h2>
-
-          <p className="mt-2 text-sm text-slate-500">
-            Your job eligibility details will appear here when opportunities
-            are available.
-          </p>
-        </div>
+    <div className="p-6 md:p-8">
+      <PageHeader title="Job Eligibility" subtitle="See why you are, or aren't, eligible for each open job." />
+      <ErrorBox message={error} onRetry={reload} />
+      {loading ? (
+        <Loading text="Checking your eligibility…" />
+      ) : !data || data.length === 0 ? (
+        <Card><Empty icon="✅" title="No jobs yet" text="Eligibility appears here when jobs are posted." /></Card>
       ) : (
         <div className="space-y-4">
-          {jobs.map((job) => (
-            <div
-              key={job.id}
-              className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-            >
-              <h2 className="text-xl font-semibold text-slate-900">
-                {job.title}
-              </h2>
-
-              <p className="mt-1 text-slate-500">
-                {job.company}
-              </p>
-
-              <div className="mt-4">
-                <span
-                  className={`rounded-full px-4 py-2 text-sm font-semibold ${
-                    job.eligible
-                      ? "bg-green-100 text-green-700"
-                      : "bg-red-100 text-red-700"
-                  }`}
-                >
-                  {job.eligible ? "Eligible" : "Not Eligible"}
-                </span>
+          {data.map(({ job, result }) => (
+            <Card key={job.id}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">{job.role}</h2>
+                  <p className="text-sm text-slate-500">{job.companies?.name || '—'}</p>
+                </div>
+                {result && <Chip tone={result.eligible ? 'green' : 'red'}>{result.eligible ? 'Eligible' : 'Not eligible'}</Chip>}
               </div>
-            </div>
+              {result && !result.eligible && (
+                <ul className="mt-3 list-disc space-y-0.5 pl-5 text-sm text-red-600">
+                  {result.reasons.map((r) => <li key={r}>{r}</li>)}
+                </ul>
+              )}
+            </Card>
           ))}
         </div>
       )}
     </div>
-  );
+  )
 }
 
-export default JobEligibility;
+export default JobEligibility

@@ -35,7 +35,8 @@ function AdminDashboard() {
   }
 
   useEffect(() => {
-    loadDashboard()
+    const t = setTimeout(loadDashboard, 0)
+    return () => clearTimeout(t)
   }, [])
 
   const cards = [
