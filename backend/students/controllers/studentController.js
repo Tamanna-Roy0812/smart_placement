@@ -1,4 +1,8 @@
 const studentService = require("../services/studentService");
+const assessmentRepository = require("../repositories/assessmentRepository");
+
+// Minimum Aptitude % needed before any technical skill assessment
+const APTITUDE_GATE_PERCENTAGE = 65;
 
 const getStudentProfile = async (req, res) => {
   try {
@@ -294,6 +298,26 @@ const getAssessmentQuestions = async (req, res) => {
 
 const createAssessmentAttempt = async (req, res) => {
   try {
+    const assessment = await studentService.getAssessmentById(
+      req.params.id
+    );
+    const { aptitudeSkillId, percentage } =
+      await assessmentRepository.getAptitudeStatus(req.user.id);
+
+    if (
+      aptitudeSkillId &&
+      assessment.skill_id !== aptitudeSkillId &&
+      (percentage === null || percentage < APTITUDE_GATE_PERCENTAGE)
+    ) {
+      return res.status(403).json({
+        success: false,
+        message:
+          percentage === null
+            ? `Attempt the Aptitude test first. You need at least ${APTITUDE_GATE_PERCENTAGE}% in Aptitude to take technical skill assessments.`
+            : `Your Aptitude score is ${percentage}%. You need at least ${APTITUDE_GATE_PERCENTAGE}% to take technical skill assessments.`,
+      });
+    }
+
     const attempt = await studentService.createAssessmentAttempt(
       req.user.id,
       req.params.id

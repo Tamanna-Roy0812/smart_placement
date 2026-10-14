@@ -380,7 +380,43 @@ const getAllStudentAttempts = async (studentId) => {
   return data;
 };
 
+// Best completed percentage a student has on any Aptitude assessment
+// (null = never attempted), plus the aptitude skill id.
+const getAptitudeStatus = async (studentId) => {
+  const { data: skill } = await supabase
+    .from("skills")
+    .select("id")
+    .ilike("name", "aptitude")
+    .maybeSingle();
+
+  if (!skill) {
+    return { aptitudeSkillId: null, percentage: null };
+  }
+
+  const { data, error } = await supabase
+    .from("assessment_attempts")
+    .select("percentage, assessments!inner(skill_id)")
+    .eq("student_id", studentId)
+    .eq("assessments.skill_id", skill.id)
+    .not("completed_at", "is", null);
+
+  if (error) {
+    throw error;
+  }
+
+  const best = (data || []).reduce(
+    (max, a) => Math.max(max, Number(a.percentage || 0)),
+    -1
+  );
+
+  return {
+    aptitudeSkillId: skill.id,
+    percentage: best < 0 ? null : best,
+  };
+};
+
 module.exports = {
+  getAptitudeStatus,
   getAllStudentAttempts,
   getActiveAssessments,
   getAssessmentById,

@@ -240,29 +240,22 @@ const checkJobEligibility = async (studentId, jobId) => {
   const studentSkills =
     await skillRepository.getStudentSkills(studentId);
 
-  // Check aptitude
-  if (
-    job.minimum_aptitude_percentage !== null &&
-    job.minimum_aptitude_percentage !== undefined
-  ) {
-    const aptitudeSkill = studentSkills.find(
-      (item) =>
-        item.skills?.name?.toLowerCase() ===
-        "aptitude"
-    );
+  // Check aptitude: the student must have taken the Aptitude test, whatever
+  // the job's minimum is (no minimum set = any score is fine)
+  const aptitudeSkill = studentSkills.find(
+    (item) => item.skills?.name?.toLowerCase() === "aptitude"
+  );
 
-    if (!aptitudeSkill) {
-      reasons.push(
-        "Aptitude score is not available."
-      );
-    } else if (
-      Number(aptitudeSkill.score) <
-      Number(job.minimum_aptitude_percentage)
-    ) {
-      reasons.push(
-        `Aptitude score must be at least ${job.minimum_aptitude_percentage}%.`
-      );
-    }
+  if (!aptitudeSkill) {
+    reasons.push("Aptitude test not attempted.");
+  } else if (
+    job.minimum_aptitude_percentage !== null &&
+    job.minimum_aptitude_percentage !== undefined &&
+    Number(aptitudeSkill.score) < Number(job.minimum_aptitude_percentage)
+  ) {
+    reasons.push(
+      `Aptitude score must be at least ${job.minimum_aptitude_percentage}%.`
+    );
   }
 
   // Check required skills (only when the job sets a minimum skill score)
