@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smart-placement
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: smart-placement
+  template:
+    metadata:
+      labels:
+        app: smart-placement
+    spec:
+      containers:
+      - name: smart-placement
+        image: DOCKERUSER/smart-placement:IMAGE_TAG
+        ports:
+        - containerPort: 80
