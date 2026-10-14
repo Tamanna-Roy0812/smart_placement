@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smart-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: smart-backend
+  template:
+    metadata:
+      labels:
+        app: smart-backend
+    spec:
+      containers:
+        - name: smart-backend
+          image: anshu226/smart-backend:latest
+          ports:
+            - containerPort: 5000
